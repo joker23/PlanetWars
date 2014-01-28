@@ -5,8 +5,8 @@ Planet Wars is inspired by Galcon, a popular iPhone and desktop strategy game. T
 Helpful links
 ===
 http://planetwars.aichallenge.org/quickstart.php
-http://planetwars.aichallenge.org/quickstart.php
 http://planetwars.aichallenge.org/
+http://aigamedev.com/open/tutorial/influence-map-mechanics/
 
 Rules:
 ===
