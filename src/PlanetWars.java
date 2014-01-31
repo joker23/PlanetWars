@@ -78,6 +78,22 @@ public class PlanetWars {
 		return r;
 	}
 
+	public int production(int id){
+		int ret = 0;
+		if(id == 1){
+			List<Planet> tmp = MyPlanets();
+			for(Planet p : tmp){
+				ret+= p.GrowthRate();
+			}
+		} else {
+			List<Planet> tmp = EnemyPlanets();
+			for(Planet p: tmp){
+				ret+= p.GrowthRate();
+			}
+		}
+		return ret;
+	}
+
 	// Return a list of all the planets that are not owned by the current
 	// player. This includes all enemy planets and neutral planets.
 	public List<Planet> NotMyPlanets() {

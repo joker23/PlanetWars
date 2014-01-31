@@ -1,0 +1,14 @@
+#!/bin/bash
+
+enemiesDir="example_bots"
+num=$1 #number of iterations we want to run
+map=$2
+for bot in 'RandomBot' 'BullyBot' 'DualBot' 'ProspectorBot' 'RageBot'
+do
+	log=$bot"_log.dat"
+	for i in $(seq 1 $num)
+	do
+		./test/test map$map $bot false >> $log
+	done
+done
+

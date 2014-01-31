@@ -11,16 +11,30 @@ public class MyBot {
 	// starting point, or you can throw it out entirely and replace it with
 	// your own. Check out the tutorials and articles on the contest website at
 	// http://www.ai-contest.com/resources.
+
+	int[] inferenceMap; //use inference mapping (assign weights to each planet on desirability)
+
 	public static void DoTurn(PlanetWars pw) {
 		// (1) If we currently have a fleet in flight, just do nothing.
-		if (pw.MyFleets().size() >= 1) {
+		int numFleets = 1;
+		boolean attackMode = false;
+		if (pw.production(1) >= pw.production(2)) {
+			numFleets = 1;
+		} else {
+			numFleets = 3;
+		}
+		if (pw.MyFleets().size() >= numFleets) {
 			return;
 		}
+
+		//build the inference map
+
+
 		// (2) Find my strongest planet.
 		Planet source = null;
 		double sourceScore = Double.MIN_VALUE;
 		for (Planet p : pw.MyPlanets()) {
-			double score = (double)p.NumShips();
+			double score = (double)p.NumShips() / (1 + p.GrowthRate());
 			if (score > sourceScore) {
 				sourceScore = score;
 				source = p;
@@ -30,7 +44,7 @@ public class MyBot {
 		Planet dest = null;
 		double destScore = Double.MIN_VALUE;
 		for (Planet p : pw.NotMyPlanets()) {
-			double score = 1.0 / (1 + p.NumShips());
+			double score = (double)(1 + p.GrowthRate()) / p.NumShips();
 			if (score > destScore) {
 				destScore = score;
 				dest = p;

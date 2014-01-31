@@ -1,0 +1,13 @@
+#!/bin/bash
+
+java -jar tools/PlayGame.jar maps/${1}.txt 1000 200 log.txt "java MyBot" "java -jar example_bots/${2}.jar" 2> tmp 1> tmp2
+
+if [ "$3" == "true" ]; then
+	wmname LG3D
+	cat tmp2 | java -jar tools/ShowGame.jar
+fi
+
+java -cp . test/Parse tmp
+
+rm tmp
+rm tmp2

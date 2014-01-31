@@ -1,12 +1,48 @@
 PlanetWars:
 ===
-Planet Wars is inspired by Galcon, a popular iPhone and desktop strategy game. This is a port of the google ai challenge.
+Planet Wars is inspired by Galcon, a popular iPhone and desktop strategy game. This is a port of the google ai challenge.i
+
+Game input parameters are as followed:
+
+args[0] = map we are using
+args[1] = max time to make a turn
+args[2] = max turns
+args[3] = log file name
+args[4...] = bots to execute
+
+TODO
+===
+- finish writing the test scripts
+- make inference mapping
 
 Helpful links
 ===
 http://planetwars.aichallenge.org/quickstart.php
 http://planetwars.aichallenge.org/
+http://planetwars.aichallenge.org/specification.php
+
 http://aigamedev.com/open/tutorial/influence-map-mechanics/
+
+Algorithm Ideas
+===
+observations
+---
+- Distance it takes is a time tick...we can do a look ahead on how much the difference after invasion
+- Use an array to store the things need to take over a planet and needed to protect a planet
+- SCC the production rate
+- The number of planets range from 23 - 30
+
+Influence Map
+---
+- we shall have two influence maps one mapping the influence that a planet has on any other planet just by the size of the planet the other maps the tendency of the edges being traversed
+
+Alpha-Beta Prunning
+---
+- Have a tree to decide how to partition the fleets based on the least fleets needed to take a planet/ protect a planet
+
+MDP
+---
+- use MDP to determine which planet we want to take.
 
 Rules:
 ===
@@ -19,3 +55,8 @@ These are the rules taken directly from Google:
 - Use of multiple processes or threads is prohibited.
 - Any attempt to disrupt the normal operation of the contest software or the contest servers will result in the immediate involvement of law enforcement officials. Our policy is to always prosecute.
 - We reserve the right to change these rules at any time without notice.
+
+changelog
+===
+
+- added inferencing...inference map will depend on production rate and danger rate
