@@ -12,49 +12,48 @@ public class MyBot {
 	// your own. Check out the tutorials and articles on the contest website at
 	// http://www.ai-contest.com/resources.
 
-	int[] inferenceMap; //use inference mapping (assign weights to each planet on desirability)
+	public static void DoTurn(PlanetWars game) {
+		
+		// calculates the minimum number of ships needed to take or protect
+		// this planet
+		int[] minShipsNeeded = new int[game.NumPlanets()+1];
+		int[] myPlanetExpense = new int[game.NumPlanets() + 1];
 
-	public static void DoTurn(PlanetWars pw) {
-		// (1) If we currently have a fleet in flight, just do nothing.
-		int numFleets = 1;
-		boolean attackMode = false;
-		if (pw.production(1) >= pw.production(2)) {
-			numFleets = 1;
-		} else {
-			numFleets = 3;
+		for(Planet planet : game.MyPlanets()){
+			minShipsNeeded[planet.PlanetID()] -= planet.NumShips();
+			myPlanetExpense[planet.PlanetID()] += planet.NumShips();
 		}
-		if (pw.MyFleets().size() >= numFleets) {
-			return;
+		
+		for(Planet planet : game.NotMyPlanets()){
+			minShipsNeeded[planet.PlanetID()] += planet.NumShips() + 20;
 		}
-
-		//build the inference map
-
-
-		// (2) Find my strongest planet.
-		Planet source = null;
-		double sourceScore = Double.MIN_VALUE;
-		for (Planet p : pw.MyPlanets()) {
-			double score = (double)p.NumShips() / (1 + p.GrowthRate());
-			if (score > sourceScore) {
-				sourceScore = score;
-				source = p;
+		
+		for(Fleet fleet : game.MyFleets()){
+			Planet fleetDest = game.GetPlanet(fleet.DestinationPlanet());
+			if(game.EnemyPlanets().contains(fleetDest)){
+				minShipsNeeded[fleetDest.PlanetID()] -= fleet.NumShips() - (fleet.TurnsRemaining() * fleetDest.GrowthRate());
+			} else {
+				minShipsNeeded[fleetDest.PlanetID()] -= fleet.NumShips();
 			}
 		}
-		// (3) Find the weakest enemy or neutral planet.
-		Planet dest = null;
-		double destScore = Double.MIN_VALUE;
-		for (Planet p : pw.NotMyPlanets()) {
-			double score = (double)(1 + p.GrowthRate()) / p.NumShips();
-			if (score > destScore) {
-				destScore = score;
-				dest = p;
-			}
+
+		for(Fleet fleet : game.EnemyFleets()){
+			Planet fleetDest = game.GetPlanet(fleet.DestinationPlanet());
+			minShipsNeeded[fleetDest.PlanetID()] += fleet.NumShips();
+			myPlanetExpense[fleetDest.PlanetID()] -= fleet.NumShips();
 		}
-		// (4) Send half the ships from my strongest planet to the weakest
-		// planet that I do not own.
-		if (source != null && dest != null) {
-			int numShips = source.NumShips() / 2;
-			pw.IssueOrder(source, dest, numShips);
+
+		for(Planet source : game.MyPlanets()){
+			for(Graph.Node node : game.getGraph().getAdjacent(source)){
+				Planet dest = node.getPlanet();
+				int numShips = Calculate.calculateLeastShips(source, dest, game, minShipsNeeded, myPlanetExpense, .8);
+				if(numShips > 0){
+					game.IssueOrder(source, dest, numShips);
+					minShipsNeeded[source.PlanetID()] += numShips;
+					minShipsNeeded[dest.PlanetID()] -= numShips;
+					break;	
+				}
+			}
 		}
 	}
 

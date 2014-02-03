@@ -4,5 +4,10 @@ all:
 clean:
 	rm *.class
 	rm *.dat
-test:
-	test/test
+
+takeSnapShot:
+	ant
+	mkdir snapshot
+	cp *.java snapshot
+	mv *.dat snapshot
+

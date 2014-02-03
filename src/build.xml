@@ -1,0 +1,38 @@
+<project name = "PlanetWars" basedir="." default="run">
+
+	<!-- declare variables -->
+	<target name="init">
+		<property name="src.dir"		value="."/>
+		<property name="build.dir"		value="bin"/>
+	</target>
+
+	<!-- make necessary folders  -->
+	<target name="prepare" depends="init">
+		<mkdir dir="${build.dir}"/>
+	</target>
+
+	<!-- compile -->
+	<target name="compile" depends="prepare">
+		<javac destdir="${build.dir}" includeantruntime="false">
+			<src path="${src.dir}"/>
+			<exclude name="**/example_bots/*.java" />
+			<exclude name="**/test/*.java" />
+			<exclude name="**/tools/*.java" />
+			<classpath>
+				<pathelement path="${build.dir}"/>
+			</classpath>
+		</javac>
+	</target>
+
+	<target name="jar" depends="compile">
+		<jar destfile="Bot3.jar" basedir="${build.dir}">
+			<manifest>
+				<attribute name="Main-Class" value="MyBot"/>
+			</manifest>
+		</jar>
+	</target>
+
+	<target name="run" depends="jar">
+		<delete dir="${build.dir}"/>
+	</target>
+</project> 

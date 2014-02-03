@@ -9,12 +9,20 @@ import java.io.*;
 public class PlanetWars {
 	// Constructs a PlanetWars object instance, given a string containing a
 	// description of a game state.
+	
+	private Graph graph; //graph representation of the game
+
 	public PlanetWars(String gameStateString) {
 		planets = new ArrayList<Planet>();
 		fleets = new ArrayList<Fleet>();
 		ParseGameState(gameStateString);
+		graph = new Graph(planets, this);
 	}
 
+
+	public Graph getGraph(){
+		return this.graph;
+	}
 	// Returns the number of planets. Planets are numbered starting with 0.
 	public int NumPlanets() {
 		return planets.size();
