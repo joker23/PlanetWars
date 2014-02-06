@@ -18,6 +18,7 @@
 			<exclude name="**/example_bots/*.java" />
 			<exclude name="**/test/*.java" />
 			<exclude name="**/tools/*.java" />
+			<exclude name="**/snapshots/**/*.java"/>
 			<classpath>
 				<pathelement path="${build.dir}"/>
 			</classpath>
@@ -25,7 +26,7 @@
 	</target>
 
 	<target name="jar" depends="compile">
-		<jar destfile="Bot3.jar" basedir="${build.dir}">
+		<jar destfile="FluffyBot.jar" basedir="${build.dir}">
 			<manifest>
 				<attribute name="Main-Class" value="MyBot"/>
 			</manifest>

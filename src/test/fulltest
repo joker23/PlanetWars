@@ -2,6 +2,7 @@
 
 enemiesDir="example_bots"
 num=$1 #number of iterations we want to run
+
 for bot in 'RandomBot' 'BullyBot' 'DualBot' 'ProspectorBot' 'RageBot'
 do
 	log=$bot"_log.dat"

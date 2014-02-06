@@ -89,6 +89,57 @@ This snapshot now performs significantly better...I've implemented a rather naiv
 - after looking through some play throughs it seems that I am not strategically choosing planets to attack... my next iteration should contain some heuristic function for each planet to represent some kind of real time AStar search
 - I also need to stategically allocate my resources ... instead of hardcoding a confidence (influence map + real time AStart stay tune!)
 
+Bot3
+---
+changes :
+- implemented heuristic function
+
+interestingly enough after I implemented a heuristic function my success rate shot up... now I am beating the bots at worst 90% of the time and my speed at beading the bots also significantly increased
+The heuristic is simple...Planets are ranked on how many planets they could produce for me...
+
+TODO:
+- one thing I notice is that my look-a-head is still a little spotty... so if the rage bot is very close to me then i have a high chance of leasing...so this mean the next step is to implement some higher level AI either have a influence map governing how many ships I could send at one time or use alpha-beta pruning for a look-ahead
+
+Bot4
+---
+- finally got influence maps working...changed the play style significantly now the bot is focusing on starving a opponent out by keeping planets and attacking other planets
+
+- still losing to Rage bot if we are starting at a location that is too close to each other
+
+- still a very simple implementation of influence maps
+
+- the win percentage of the bot increased at the expense of winning too quickly
+
+TODO
+- we need some ways to use the map more...such as more influence on a specific area means we don't need to send as much ships while less influence means we should over compensate more
+
+- it seems that there are times that  should play more agressive so I think a finite state machine will be pretty good at this... (combining defensive play and offensive play)
+
+- consider ditching the use of distance as a part of the heuristic measure...influence is enough (since it encompasses that as well);
+
+- make it so that we can send ships to planets even if it wouldn't capture them...
+
+- make it so that planets with a certain confidence can only spend half as much as normal
+
+Bot5
+---
+- made it so that bots will send little fleets at a time this is good in that we can have a better look ahead
+
+TODO:
+- determine how to figure out how much fleet to partition
+
+Bot 6 and 7
+---
+- made a very simple finite state machine to handle dangerous situations when you spawn really close to your opponent
+- refactored code so it looks better
+- redid influence mapping
+- redid look ahead
+- redid heuristics
+
+the ai now beats all bots 98% of the time minimum.
+
+- this is a good time to stop
+- 
 
 Rules:
 ===

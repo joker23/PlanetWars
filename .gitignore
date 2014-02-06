@@ -2,3 +2,7 @@
 *.zip
 *.class
 *.dat
+example_bots
+snapshots
+test
+Makefile
