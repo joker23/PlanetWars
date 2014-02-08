@@ -10,11 +10,6 @@ args[2] = max turns
 args[3] = log file name
 args[4...] = bots to execute
 
-TODO
-===
-- finish writing the test scripts
-- make inference mapping
-
 Helpful links
 ===
 http://planetwars.aichallenge.org/quickstart.php
@@ -22,7 +17,11 @@ http://planetwars.aichallenge.org/
 http://planetwars.aichallenge.org/specification.php
 
 http://aigamedev.com/open/tutorial/influence-map-mechanics/
-http://iouri-khramtsov.blogspot.com/2010/11/google-ai-challenge-planet-wars-entry.html
+
+TODO
+===
+- normalizing the influence throughout the AI (do this for planets that don't have moves)
+- heuristic out the planets that are closer to other planets
 
 Algorithm Ideas
 ===
