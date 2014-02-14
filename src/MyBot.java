@@ -14,7 +14,6 @@ public class MyBot {
 	// http://www.ai-contest.com/resources.
 	public enum STATE {
 		CAREFUL, //in this state the ai is really careful with its moves
-		EXPAND,  //forces the expansion of influence
 		DEFAULT  //this is the default state of the AI
 	}
 
@@ -22,9 +21,10 @@ public class MyBot {
 	private static STATE state;
 	private static int[] shipRequestTable; // this will be a table that has all the ships we request to every location
 	private static int[] shipAvailableTable; //this table will have all the ships that is available to us
+	private static int turnCount = 0;
 
 	public static void DoTurn(PlanetWars game) {
-
+		turnCount ++ ;
 		influenceMap = makeInfluenceMap(game);
 		
 		state = getState(game);
@@ -117,8 +117,39 @@ public class MyBot {
 			influenceDeficit[planet.PlanetID()] = avgInf - influenceMap[planet.PlanetID()];
 		}
 
+		//find the minimum distances
+		int[] minimumDistance = new int[game.NumPlanets()];
+		for(Planet mine : game.MyPlanets()){
+			int minDist = Integer.MAX_VALUE;
+			for(Planet e : game.EnemyPlanets()){
+				minDist = Math.min(minDist, game.Distance(mine.PlanetID(), e.PlanetID()));
+			}
+
+			minimumDistance[mine.PlanetID()] = minDist;
+		}
+
+		int maxEnemyPlanetSize = 0;
+		for(Planet planet : game.EnemyPlanets()){
+			maxEnemyPlanetSize = Math.max(maxEnemyPlanetSize, planet.NumShips());
+		}
 
 		for(Planet source : game.MyPlanets()){
+			// midgame to keep things interesting
+			if(turnCount > 100 && source.NumShips() > maxEnemyPlanetSize * 2 + 1){
+				//if we have a planet greater than all other planets by 2x
+				int t = Integer.MAX_VALUE;
+				Planet d = null;
+				for(Planet dest : game.EnemyPlanets()){
+					if(t > game.Distance(dest.PlanetID(), source.PlanetID())){
+						t = game.Distance(dest.PlanetID(), source.PlanetID());
+						d = dest;
+					}
+				}
+				if(d != null){
+					game.IssueOrder(source, d, maxEnemyPlanetSize + 1);
+					continue;
+				}
+			}
 			Planet bestDest = null;
 			double bestHeuristic = 0;
 			int bestNumShips = 0;
@@ -135,10 +166,6 @@ public class MyBot {
 						heuristic = getCarefulHeuristics(game, source, dest);
 						numShips = getLeastShipsNeeded(game, source, dest, 1, 3);
 						state = getState(game);
-						break;
-					case EXPAND:
-						heuristic = getHeuristics(dest, 0);	
-						numShips = getLeastShipsNeeded(game, source, dest, 1, calcConfidence(game, source));
 						break;
 					default:
 						heuristic = getHeuristics(dest, 0);
@@ -174,18 +201,18 @@ public class MyBot {
 				if(numShips >= source.NumShips()){
 					continue;
 				}
-				double maxDef = 0;
+				double minDist = Integer.MAX_VALUE;
 				int maxInd = -1;
 				for(Planet planet : game.MyPlanets()){
 					int currind = planet.PlanetID();
-					if(influenceDeficit[currind] > maxDef && planet.PlanetID() != source.PlanetID()){
-						maxDef = influenceDeficit[currind];
+					if(minimumDistance[currind] < minDist && planet.PlanetID() != source.PlanetID()){
+						minDist = minimumDistance[currind];
 						maxInd = currind;
 					}
 				}
 				if(maxInd > -1){
 					game.IssueOrder(source.PlanetID(), maxInd, numShips);
-					influenceDeficit[maxInd] -= maxDef;
+					influenceDeficit[maxInd] = 0;
 				}
 			}
 		}
@@ -260,9 +287,9 @@ public class MyBot {
 	 * number of ships on the planet
 	 */
 	private static double getHeuristics(int planet, int growthrate, int numships, int minInfluence){
-		if (influenceMap[planet] < minInfluence){
-			return -1;
-		}
+		//if (influenceMap[planet] < minInfluence){
+		//	return -1;
+		//}
 		
 		double numshipslog = (numships == 0) ? 0 : Math.log((double) numships) + .1;
 		return growthrate * influenceMap[planet] / numships;
@@ -348,8 +375,6 @@ public class MyBot {
 				return STATE.DEFAULT;
 			}
 
-		} else if(getMyGrowthRate(game) < getEnemyGrowthRate(game)){
-			return STATE.EXPAND;
 		}
 		else {
 			return STATE.DEFAULT;
