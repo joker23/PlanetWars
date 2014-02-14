@@ -27,34 +27,37 @@ public class MyBot {
 
 		influenceMap = makeInfluenceMap(game);
 		
-		if(state == null){
-			state = getState(game);
-		}
+		state = getState(game);
+		
 
 		//USE LOOKAHEAD!
 		shipRequestTable = new int[game.NumPlanets() + 1];
 		shipAvailableTable = new int[game.NumPlanets() + 1];
-
+		
+		//look at my current planet and update how many ships we can 
+		//actually send safely
 		for(Planet planet : game.MyPlanets()) {
 			shipRequestTable[planet.PlanetID()] -= planet.NumShips();
 			shipAvailableTable[planet.PlanetID()] += planet.NumShips();
 
-			int time = 0;
+			int time = 0; //beam search through only times of interest
 			ArrayList<Fleet> fleets = getIncomingFleets(game, planet);
 			Collections.sort(fleets, new fleetComparator());
 
 			for (Fleet fleet : fleets) {
 
-				if(game.MyFleets().contains(fleet)){
+				if(game.MyFleets().contains(fleet)){ //if it is my fleet...then we don't need to send as much
 					shipRequestTable[planet.PlanetID()] -= fleet.NumShips();
 					continue;
 				}
-
+				
+				//else we have to check out how much the enemy is sending
 				int discreteTime = fleet.TurnsRemaining() - time;
 				int planetGain = discreteTime * planet.GrowthRate() - fleet.NumShips();
 
 				shipRequestTable[planet.PlanetID()] -= planetGain;
 	
+				// we can only say that we have available ships if the enemy doesn't have enough to take the planet
 				if (planetGain < 0) {
 					shipAvailableTable[planet.PlanetID()] += planetGain;
 				}
@@ -63,6 +66,7 @@ public class MyBot {
 			}
 		}
 
+		//see how many we need to send to the enemy planet to take it
 		for(Planet planet : game.EnemyPlanets()) {
 			shipRequestTable[planet.PlanetID()] += planet.NumShips();
 
@@ -72,39 +76,47 @@ public class MyBot {
 
 			for(Fleet fleet : fleets){
 
-				if(game.EnemyFleets().contains(fleet)){
+				if(game.EnemyFleets().contains(fleet)){ //if it is the enemy fleet then we need more ships at this planet
 					shipRequestTable[planet.PlanetID()] += fleet.NumShips();
 					continue;
 				}
 
 				int discreteTime = fleet.TurnsRemaining() - time;
-				int planetGain = discreteTime * planet.GrowthRate() - fleet.NumShips();
+				int planetGain = discreteTime * planet.GrowthRate() - fleet.NumShips(); //how many ships we need at that time
 				
 				shipRequestTable[planet.PlanetID()] += planetGain;
 
 				time = fleet.TurnsRemaining();
 			}
 		}
-
+		
+		//see what the neutral planets need
 		for(Planet planet : game.NeutralPlanets()){
 			shipRequestTable[planet.PlanetID()] += planet.NumShips();
 
-			int shipsRemaining = planet.NumShips();
 			ArrayList<Fleet> fleets = getIncomingFleets(game, planet);
-			Collections.sort(fleets, new fleetComparator());
-			int time = 0;
 
 			for(Fleet fleet : fleets){
 				if(game.MyFleets().contains(fleet)){
 					shipRequestTable[planet.PlanetID()] -= fleet.NumShips();
 				} else {
 					shipRequestTable[planet.PlanetID()] += fleet.NumShips();
-				}
-			
+				}	
 			}
 		}
-		
-		int moved = 0;
+
+		//find the average influence
+		double avgInf = 0;
+		double[] influenceDeficit = new double[game.NumPlanets()];
+		for(Planet planet : game.MyPlanets()){
+			avgInf += influenceMap[planet.PlanetID()];
+		}
+		avgInf /= game.MyPlanets().size();
+
+		for(Planet planet : game.MyPlanets()){
+			influenceDeficit[planet.PlanetID()] = avgInf - influenceMap[planet.PlanetID()];
+		}
+
 
 		for(Planet source : game.MyPlanets()){
 			Planet bestDest = null;
@@ -121,12 +133,16 @@ public class MyBot {
 				switch (state) {
 					case CAREFUL:
 						heuristic = getCarefulHeuristics(game, source, dest);
-						numShips = getLeastShipsNeeded(game, source, dest, 2, 3);
+						numShips = getLeastShipsNeeded(game, source, dest, 1, 3);
 						state = getState(game);
 						break;
+					case EXPAND:
+						heuristic = getHeuristics(dest, 0);	
+						numShips = getLeastShipsNeeded(game, source, dest, 1, calcConfidence(game, source));
+						break;
 					default:
-						heuristic = getHeuristics(dest);
-						numShips = getLeastShipsNeeded(game, source, dest, 1, 3);
+						heuristic = getHeuristics(dest, 0);
+						numShips = getLeastShipsNeeded(game, source, dest, 1, calcConfidence(game, source));
 				}
 				if(numShips > 0 && heuristic > bestHeuristic){ //this means we should send ships there
 					bestDest = dest;
@@ -135,14 +151,59 @@ public class MyBot {
 				}
 			}
 			if(bestDest != null){
-				moved++;
 				game.IssueOrder(source, bestDest, bestNumShips);
 				shipRequestTable[source.PlanetID()] += bestNumShips;
 				shipAvailableTable[bestDest.PlanetID()] -= bestNumShips;
+			} else {
+				//if we did not issue any orders...kick in the influence balancing ai
+				boolean underAttack = false;
+				for(Fleet fleet : game.EnemyFleets()){
+					if(fleet.DestinationPlanet() == source.PlanetID()){
+						underAttack = true;
+						break;
+					}
+				}
+				if(underAttack){
+					continue;
+				}
+				int deficit = - (int)influenceDeficit[source.PlanetID()];
+				if(deficit <= 0 || shipAvailableTable[source.PlanetID()] < 1){
+					continue;
+				}
+				int numShips = Math.min (deficit, shipAvailableTable[source.PlanetID()] - 1);
+				if(numShips >= source.NumShips()){
+					continue;
+				}
+				double maxDef = 0;
+				int maxInd = -1;
+				for(Planet planet : game.MyPlanets()){
+					int currind = planet.PlanetID();
+					if(influenceDeficit[currind] > maxDef && planet.PlanetID() != source.PlanetID()){
+						maxDef = influenceDeficit[currind];
+						maxInd = currind;
+					}
+				}
+				if(maxInd > -1){
+					game.IssueOrder(source.PlanetID(), maxInd, numShips);
+					influenceDeficit[maxInd] -= maxDef;
+				}
 			}
 		}
 	}
 
+	private static int calcConfidence(PlanetWars game, Planet planet){
+		//find nearest enemy planet
+		int nearest = Integer.MAX_VALUE;
+		for(Planet e : game.EnemyPlanets()){
+			nearest = Math.min(nearest, game.Distance(planet.PlanetID(), e.PlanetID()));
+		}
+
+		if(nearest < 15){
+			return 3;
+		} else{
+			return 2;
+		}
+	}
 
 	private static ArrayList<Fleet> getIncomingFleets(PlanetWars game, Planet planet){
 		ArrayList<Fleet> ret = new ArrayList<Fleet>();
@@ -198,8 +259,8 @@ public class MyBot {
 	 * the heuristic of a planet is a function of its growthrate, influence, and
 	 * number of ships on the planet
 	 */
-	private static double getHeuristics(int planet, int growthrate, int numships){
-		if (influenceMap[planet] < 0){
+	private static double getHeuristics(int planet, int growthrate, int numships, int minInfluence){
+		if (influenceMap[planet] < minInfluence){
 			return -1;
 		}
 		
@@ -208,8 +269,8 @@ public class MyBot {
 
 	}
 
-	private static double getHeuristics(Planet planet){
-		return getHeuristics(planet.PlanetID(), planet.GrowthRate(), planet.NumShips());
+	private static double getHeuristics(Planet planet, int minInfluence){
+		return getHeuristics(planet.PlanetID(), planet.GrowthRate(), planet.NumShips(), minInfluence);
 	}
 
 	/**makeInfluenceMap
@@ -249,6 +310,24 @@ public class MyBot {
 		return ret;
 	}
 
+	private static int getEnemyGrowthRate(PlanetWars game){
+		int ret = 0;
+		for(Planet p : game.EnemyPlanets()){
+			ret += p.GrowthRate();
+		}
+
+		return ret;
+	}
+
+	private static int getMyGrowthRate(PlanetWars game){
+		int ret = 0;
+		for(Planet p : game.MyPlanets()){
+			ret += p.GrowthRate();
+		}
+
+		return ret;
+	}
+
 	/**getState
 	 * this method returns the state in which the game is in
 	 */
@@ -269,7 +348,10 @@ public class MyBot {
 				return STATE.DEFAULT;
 			}
 
-		} else {
+		} else if(getMyGrowthRate(game) < getEnemyGrowthRate(game)){
+			return STATE.EXPAND;
+		}
+		else {
 			return STATE.DEFAULT;
 		}
 	}

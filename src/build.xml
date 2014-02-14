@@ -26,7 +26,7 @@
 	</target>
 
 	<target name="jar" depends="compile">
-		<jar destfile="FluffyBot.jar" basedir="${build.dir}">
+		<jar destfile="ultima1.0.jar" basedir="${build.dir}">
 			<manifest>
 				<attribute name="Main-Class" value="MyBot"/>
 			</manifest>
