@@ -2,6 +2,7 @@
 *.zip
 *.class
 *.dat
+*.txt
 example_bots
 snapshots
 test
